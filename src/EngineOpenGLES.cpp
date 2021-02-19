@@ -1,7 +1,11 @@
 #include "EngineOpenGLES.h"
 
-#if defined(TARGET_OPENGLES) && (!defined (OF_TARGET_API_VULKAN) )
+// Since the new backends, the GLES renderer is not used anymore, and rpis use the glfw backend with GLES shaders handled by the opengl2 backend.
+#if defined(TARGET_OPENGLES) && !defined (OF_TARGET_API_VULKAN) && (!defined(TARGET_RASPBERRY_PI) || !defined(TARGET_GLFW_WINDOW))
 
+//#include "ofAppiOSWindow.h"
+//#include "imgui_impl_osx.h"
+//#include "imgui_impl_opengl3.h"
 #include "ofAppRunner.h"
 #include "ofGLProgrammableRenderer.h"
 
@@ -15,22 +19,38 @@ namespace ofxImGui
 		if (isSetup) return;
 
 		ImGuiIO& io = ImGui::GetIO();
+		
+		io.DisplaySize = ImVec2((float)ofGetWidth(), (float)ofGetHeight());
 
+		// Only keys used by imgui have to be mapped
 		io.KeyMap[ImGuiKey_Tab] = OF_KEY_TAB;
-		io.KeyMap[ImGuiKey_LeftArrow] = OF_KEY_LEFT;
-		io.KeyMap[ImGuiKey_RightArrow] = OF_KEY_RIGHT;
-		io.KeyMap[ImGuiKey_UpArrow] = OF_KEY_UP;
-		io.KeyMap[ImGuiKey_DownArrow] = OF_KEY_DOWN;
-		io.KeyMap[ImGuiKey_PageUp] = OF_KEY_PAGE_UP;
-		io.KeyMap[ImGuiKey_PageDown] = OF_KEY_PAGE_DOWN;
-		io.KeyMap[ImGuiKey_Home] = OF_KEY_HOME;
-		io.KeyMap[ImGuiKey_End] = OF_KEY_END;
+		io.KeyMap[ImGuiKey_LeftArrow] = -1;//OF_KEY_LEFT;
+		io.KeyMap[ImGuiKey_RightArrow] = -1;//OF_KEY_RIGHT;
+		io.KeyMap[ImGuiKey_UpArrow] = -1;//OF_KEY_UP;
+		io.KeyMap[ImGuiKey_DownArrow] = -1;//OF_KEY_DOWN;
+		io.KeyMap[ImGuiKey_PageUp] = -1;//OF_KEY_PAGE_UP;
+		io.KeyMap[ImGuiKey_PageDown] = -1;//OF_KEY_PAGE_DOWN;
+		io.KeyMap[ImGuiKey_Home] = -1;//OF_KEY_HOME;
+		io.KeyMap[ImGuiKey_End] = -1;//OF_KEY_END;
+		io.KeyMap[ImGuiKey_Insert] = -1;//OF_KEY_INSERT;
 		io.KeyMap[ImGuiKey_Delete] = OF_KEY_DEL;
 		io.KeyMap[ImGuiKey_Backspace] = OF_KEY_BACKSPACE;
+		io.KeyMap[ImGuiKey_Space] = ' ';
 		io.KeyMap[ImGuiKey_Enter] = OF_KEY_RETURN;
 		io.KeyMap[ImGuiKey_Escape] = OF_KEY_ESC;
+		io.KeyMap[ImGuiKey_A] = 'a';
+		io.KeyMap[ImGuiKey_C] = 'c';
+		io.KeyMap[ImGuiKey_V] = 'v';
+		io.KeyMap[ImGuiKey_X] = 'x';
+		io.KeyMap[ImGuiKey_Y] = 'y';
+		io.KeyMap[ImGuiKey_Z] = 'z';
+#if defined(OFXIMGUI_ENABLE_OF_BINDINGS)
 
-		if (autoDraw)
+#ifdef OFXIMGUI_DEBUG
+        ofLogVerbose(__FUNCTION__) << "ofxImGui loading GLES with oF bingings (OFXIMGUI_ENABLE_OF_BINDINGS)";
+        #pragma message "ofxImGui compiling with GLES renderer and OFXIMGUI_ENABLE_OF_BINDINGS enabled."
+#endif
+		//if (autoDraw)
 		{
 			io.RenderDrawListsFn = rendererDrawData;
 		}
@@ -50,7 +70,17 @@ namespace ofxImGui
 		ofAddListener(ofEvents().mouseReleased, (BaseEngine*)this, &BaseEngine::onMouseReleased);
 		ofAddListener(ofEvents().mouseScrolled, (BaseEngine*)this, &BaseEngine::onMouseScrolled);
 		ofAddListener(ofEvents().windowResized, (BaseEngine*)this, &BaseEngine::onWindowResized);
-
+#else
+    #ifdef OFXIMGUI_DEBUG
+        ofLogVerbose(__FUNCTION__) << "ofxImGui loading GLES with native imgui bindings";
+        #pragma message "ofxImGui compiling with GLES renderer and native imgui bindings."
+    #endif
+		// TODO
+		// Init window
+		//ofAppiOSWindow* curWin = (ofAppiOSWindow*)ofGetWindowPtr()->getWindowContext();
+		//ImGui_ImplIOS_Init();
+#endif
+		
 		isSetup = true;
 	}
 
@@ -59,6 +89,7 @@ namespace ofxImGui
 	{
 		if (!isSetup) return;
 
+#if defined(OFXIMGUI_ENABLE_OF_BINDINGS)
 		// Override listeners
 		ofRemoveListener(ofEvents().keyReleased, this, &EngineOpenGLES::onKeyReleased);
 
@@ -71,10 +102,12 @@ namespace ofxImGui
 		ofRemoveListener(ofEvents().windowResized, (BaseEngine*)this, &BaseEngine::onWindowResized);
 
 		invalidateDeviceObjects();
-
+#endif
+		
 		isSetup = false;
 	}
 
+#if defined(OFXIMGUI_ENABLE_OF_BINDINGS)
 	bool EngineOpenGLES::createDeviceObjects()
 	{
 //#if defined(TARGET_RASPBERRY_PI)
@@ -195,13 +228,32 @@ namespace ofxImGui
 		g_Shader.unload();
 		g_ShaderHandle = 0;
 	}
-
+#endif
 	//--------------------------------------------------------------
-	void EngineOpenGLES::draw()
+	void EngineOpenGLES::render()
 	{
+#if defined(OFXIMGUI_ENABLE_OF_BINDINGS)
 		rendererDrawData(ImGui::GetDrawData());
-	}
+#else
+		// todo
+#endif
+        // Handle viewports
+        // todo: check if this works
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            // This line has to be ported to GLES
+            //GLFWwindow* backup_current_context = glfwGetCurrentContext();
 
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+
+            // Restore context so we can continue to render with oF
+            // This line has to be ported to GLES
+            //glfwMakeContextCurrent(backup_current_context);
+        }
+	}
+#if defined(OFXIMGUI_ENABLE_OF_BINDINGS)
 	//--------------------------------------------------------------
 	void EngineOpenGLES::rendererDrawData(ImDrawData * draw_data)
 	{
@@ -293,6 +345,7 @@ namespace ofxImGui
 		io.AddInputCharacter((unsigned short)event.codepoint);
 		//TODO modifiers?
 	}
+#endif
 }
 
 #endif

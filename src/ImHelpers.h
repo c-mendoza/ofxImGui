@@ -6,6 +6,7 @@
 #include "ofTexture.h"
 #include "ofGLBaseTypes.h"
 #include "imgui.h"
+#include <stack> // Needed for Arch Linux
 
 static const int kImGuiMargin = 10;
 
@@ -79,7 +80,7 @@ namespace ofxImGui
 
 	bool AddParameter(ofParameter<std::string>& parameter, size_t maxChars = 255, bool multiline = false);
 
-	bool AddParameter(ofParameter<void>& parameter);
+	bool AddParameter(ofParameter<void>& parameter, float width = 0);
 
 	template<typename ParameterType>
 	bool AddParameter(ofParameter<ParameterType>& parameter);
