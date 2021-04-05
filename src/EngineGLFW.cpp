@@ -271,7 +271,7 @@ namespace ofxImGui
         else{
             ImGui_ImplOpenGL2_NewFrame();
         }
-        ImGui_ImplGlfw_NewFrame();
+        ImGui_ImplGlfw_NewFrame((GLFWwindow*)ofGetWindowPtr()->getWindowContext());
 #endif
     }
 

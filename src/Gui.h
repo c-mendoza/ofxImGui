@@ -59,6 +59,7 @@ namespace ofxImGui
         EngineVk engine;
 #else
         EngineGLFW engine;
+		GLFWwindow* glfWwindow = nullptr;
 #endif
         
         float lastTime=0.f;

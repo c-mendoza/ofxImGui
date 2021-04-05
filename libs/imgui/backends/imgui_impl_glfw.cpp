@@ -465,8 +465,9 @@ static void ImGui_ImplGlfw_UpdateMonitors()
     g_WantUpdateMonitors = false;
 }
 
-void ImGui_ImplGlfw_NewFrame()
+void ImGui_ImplGlfw_NewFrame(GLFWwindow* glfWwindow)
 {
+	g_Window = glfWwindow;
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.Fonts->IsBuilt() && "Font atlas not built! It is generally built by the renderer backend. Missing call to renderer _NewFrame() function? e.g. ImGui_ImplOpenGL3_NewFrame().");
 
